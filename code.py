@@ -1,213 +1,111 @@
 import streamlit as st
 import random
 
-# --- PAGE LAYOUT & CONFIGURATION ---
+# --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="TechNova Executive Sim", page_icon="🏢", layout="centered")
 
-# --- SIMULATION CONFIGURATION & DATA ---
-NEWS_EVENTS = {
-    "talent_crunch": {
-        "headline": "🔴 NEWS FLASH: Global Tech Talent Crunch Hits Record Peak",
-        "desc": "An acute shortage of specialized systems engineers means skilled labor is highly scarce and non-substitutable.",
-        "effect_desc": "Expert Power yields 50% higher returns this turn; Coercive Power is twice as damaging."
-    },
-    "regulatory_shift": {
-        "headline": "⚖️ NEWS FLASH: Major AI Compliance Accord Finalized",
-        "desc": "New international frameworks mandate strict architectural documentation and compliance tracking.",
-        "effect_desc": "Legitimacy and Rational Persuasion tactics receive a significant performance boost."
-    },
-    "competitor_drop": {
-        "headline": "⚡ NEWS FLASH: Rival Tech Giant Suffers Massive Cloud Outage",
-        "desc": "A competitor's infrastructure failure drives wave of panicking clients toward TechNova's platform.",
-        "effect_desc": "Market pressure spikes. Reward and Exchange tactics become highly effective to rush delivery."
-    },
-    "supply_chain": {
-        "headline": "🚢 NEWS FLASH: Silicon Chip Shipments Delayed due to Global Port Bottlenecks",
-        "desc": "Physical hardware has become extremely scarce, drastically increasing resource dependence.",
-        "effect_desc": "Coalition and Exchange tactics are required to secure internal resources."
-    }
-}
+# --- SIMULATION DATA: 12 ROUNDS ---
+# Weights reflect OB theory: Personal/Rational = high positive, Formal = moderate, Coercive/Negative Politics = negative/risky.
+SCENARIOS = [
+    {"round": 1, "type": "Downward", "title": "The Overdue Milestone", "desc": "The dev team is missing critical integration deadlines.", "labels": ["Expert Power (Mentoring/Pair-programming)", "Reward Power (Bonus for finishing)", "Coercive Power (Threaten termination)"], "weights": [0.04, 0.02, -0.03]},
+    {"round": 2, "type": "Lateral", "title": "IT Server Access", "desc": "IT is prioritizing other departments over your server requests.", "labels": ["Exchange (Trade dev hours)", "Coalition (Unite with other VPs)", "Legitimate (Demand SLA compliance)"], "weights": [0.04, 0.03, 0.01]},
+    {"round": 3, "type": "Upward", "title": "Board Budget Pitch", "desc": "You need a 15% budget expansion from the CEO.", "labels": ["Rational Persuasion (ROI data)", "Ingratiation (Flatter the CEO)", "Upward Coalition (Use external advisors)"], "weights": [0.05, 0.01, 0.02]},
+    {"round": 4, "type": "Politics", "title": "Zero-Sum Reviews", "desc": "A new competitive evaluation system increases performance pressure.", "labels": ["Focus on Core Performance", "Legitimate Politics (Bypass chain of command)", "Withhold Data from Peers"], "weights": [0.03, 0.02, -0.04]},
+    {"round": 5, "type": "Dependence", "title": "Vendor Price Hike", "desc": "Your sole cloud provider suddenly raises rates by 20%.", "labels": ["Build Internal Substitute", "Legal/Contract Enforcement", "Acquiesce and Pay"], "weights": [0.04, 0.02, -0.02]},
+    {"round": 6, "type": "Downward", "title": "Quality Control Crisis", "desc": "A junior team shipped a major bug to production.", "labels": ["Expert (Lead the root-cause analysis)", "Legitimate (Enforce strict protocols)", "Coercive (Publicly reprimand)"], "weights": [0.04, 0.02, -0.05]},
+    {"round": 7, "type": "Lateral", "title": "Marketing Misalignment", "desc": "Marketing is overpromising AI features to clients.", "labels": ["Consultation (Involve them in planning)", "Exchange (Offer early feature access)", "Pressure (Threaten to escalate)"], "weights": [0.04, 0.03, -0.03]},
+    {"round": 8, "type": "Upward", "title": "Project Delay Disclosure", "desc": "You must inform the board that the launch is delayed by a month.", "labels": ["Rational Persuasion (Data-backed recovery plan)", "Personal Appeals (Rely on CEO loyalty)", "Legitimacy (Cite policy allowances)"], "weights": [0.05, 0.02, 0.01]},
+    {"round": 9, "type": "Politics", "title": "Credit Stealing", "desc": "A peer VP is taking credit for your team's AI module.", "labels": ["Rational Persuasion (Show commit logs)", "Legitimate Politics (Complain to supervisor)", "Retaliate (Sabotage their project)"], "weights": [0.04, 0.02, -0.06]},
+    {"round": 10, "type": "Lateral", "title": "Data Silos", "desc": "The analytics team won't share user data needed for your model.", "labels": ["Exchange (Trade access)", "Inspirational Appeals (Share vision)", "Legitimate (Cite company data rules)"], "weights": [0.04, 0.03, 0.01]},
+    {"round": 11, "type": "Downward", "title": "Team Burnout", "desc": "Engineers are exhausted and turnover risk is high.", "labels": ["Referent Power (Empathy & role modeling)", "Reward Power (Give paid time off)", "Pressure (Demand resilience)"], "weights": [0.05, 0.03, -0.06]},
+    {"round": 12, "type": "Upward", "title": "The Pivot Decision", "desc": "The market shifted. You must convince the board to pivot the entire product.", "labels": ["Rational Persuasion (Market data)", "Inspirational Appeals (New vision)", "Coalition (Employee petition)"], "weights": [0.05, 0.04, 0.02]}
+]
+
+NEWS_FLASHES = [
+    "🔴 Global Tech Talent Crunch Hits Record Peak",
+    "⚖️ Major AI Compliance Accord Finalized",
+    "⚡ Rival Tech Giant Suffers Massive Cloud Outage",
+    "🚢 Silicon Chip Shipments Delayed Globally",
+    "📉 Economic Downturn Freezes Venture Capital",
+    "🚀 Breakthrough in Quantum Computing Announced"
+]
 
 # --- INITIALIZE SESSION STATE ---
 if 'stage' not in st.session_state:
-    st.session_state.stage = 1
+    st.session_state.stage = 0
 if 'profit' not in st.session_state:
-    st.session_state.profit = 2000000.0  # Starting profit $2 Million
-if 'log' not in st.session_state:
-    st.session_state.log = []
-if 'current_event' not in st.session_state:
-    st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
+    st.session_state.profit = 2000000.0
+if 'news' not in st.session_state:
+    st.session_state.news = random.choice(NEWS_FLASHES)
+if 'market_risk' not in st.session_state:
+    st.session_state.market_risk = random.choice(["Low", "Moderate", "High", "Critical"])
+
+def next_round(mult):
+    st.session_state.profit *= mult
+    st.session_state.stage += 1
+    st.session_state.news = random.choice(NEWS_FLASHES)
+    st.session_state.market_risk = random.choice(["Low", "Moderate", "High", "Critical"])
 
 def reset_sim():
-    st.session_state.stage = 1
+    st.session_state.stage = 0
     st.session_state.profit = 2000000.0
-    st.session_state.log = []
-    st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
+    st.session_state.news = random.choice(NEWS_FLASHES)
+    st.session_state.market_risk = random.choice(["Low", "Moderate", "High", "Critical"])
 
-# --- SIMULATION HEADER ---
-st.title("🏢 TechNova Executive: Power & Politics Simulation")
-st.markdown("Navigate macro shocks, manage critical dependencies, and maximize fiscal year profits through tactical alignment.")
-st.metric("TechNova Project Net Profit", f"${st.session_state.profit:,.2f}")
-st.progress(min((st.session_state.stage - 1) * 20, 100), text=f"Stage {st.session_state.stage} of 5")
+# --- UI HEADER ---
+st.title("🏢 TechNova Executive: 12-Month Pivot")
+st.metric("TechNova Project Net Profit", f"${st.session_state.profit:,.0f}")
+st.progress(min(st.session_state.stage / 12, 1.0), text=f"Month {st.session_state.stage + 1} of 12")
 st.divider()
 
-# Fetch active news flash data
-current_ev_data = NEWS_EVENTS[st.session_state.current_event]
+# --- GAME ENGINE ---
+if st.session_state.stage < 12:
+    current = SCENARIOS[st.session_state.stage]
+    
+    # Header & Randomizers
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info(f"**News Flash:** {st.session_state.news}")
+    with col2:
+        risk_color = "🔴" if st.session_state.market_risk in ["High", "Critical"] else "🟢"
+        st.warning(f"{risk_color} **Market Risk Level:** {st.session_state.market_risk}")
 
-# --- GAME STAGES ---
+    st.subheader(f"Month {current['round']}: {current['title']} ({current['type']} Influence)")
+    st.write(current['desc'])
+    st.write("Allocate your 100% management bandwidth across these tactics:")
 
-# STAGE 1: DOWNWARD INFLUENCE
-if st.session_state.stage == 1:
-    st.subheader("Stage 1: Deploying the AI Dev Team")
-    st.warning(f"**{current_ev_data['headline']}**\n\n{current_ev_data['desc']}\n\n*Impact:* {current_ev_data['effect_desc']}")
-    
-    st.write("Your engineering team is anxious about tight deadlines. Allocate 100% of your management style across the three bases of Formal and Personal Power:")
-    
-    expert = st.slider("Expert Power % (Hands-on mentoring, architectural guidance)", 0, 100, 40)
-    reward = st.slider("Reward Power % (Structuring performance bonuses & recognition)", 0, 100 - expert, 30)
-    coercive = 100 - expert - reward
-    st.info(f"Remaining allocation for **Coercive Power** (Threats of reassignment): {coercive}%")
-    
-    if st.button("Commit Quarterly Strategy", type="primary"):
-        # Base weights modified by external event
-        w_exp = 0.004 * (1.5 if st.session_state.current_event == "talent_crunch" else 1.0)
-        w_rwd = 0.002 * (1.4 if st.session_state.current_event == "competitor_drop" else 1.0)
-        w_coe = -0.003 * (2.0 if st.session_state.current_event == "talent_crunch" else 1.0)
+    # Sliders
+    val1 = st.slider(current['labels'][0], 0, 100, 40)
+    val2 = st.slider(current['labels'][1], 0, 100 - val1, 30)
+    val3 = 100 - val1 - val2
+    st.write(f"**{current['labels'][2]}:** {val3}%")
+
+    if st.button("Commit Monthly Strategy", type="primary"):
+        # Risk amplifies the volatility of the weights
+        risk_modifier = {"Low": 0.8, "Moderate": 1.0, "High": 1.5, "Critical": 2.0}[st.session_state.market_risk]
         
-        mult = 1.0 + (expert * w_exp) + (reward * w_rwd) + (coercive * w_coe)
-        st.session_state.profit *= mult
-        st.session_state.log.append(f"Stage 1 Dev Allocation: Expert={expert}%, Reward={reward}%, Coercive={coercive}%. Multiplier: {mult:.3f}")
+        # Calculate multiplier (convert percentages to decimals)
+        impact = ((val1/100) * current['weights'][0]) + ((val2/100) * current['weights'][1]) + ((val3/100) * current['weights'][2])
+        mult = 1.0 + (impact * risk_modifier)
         
-        st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
-        st.session_state.stage += 1
+        next_round(mult)
         st.rerun()
 
-# STAGE 2: LATERAL INFLUENCE & RESOURCE DEPENDENCE
-elif st.session_state.stage == 2:
-    st.subheader("Stage 2: Overcoming the IT Core Infrastructure Bottleneck")
-    st.warning(f"**{current_ev_data['headline']}**\n\n{current_ev_data['desc']}\n\n*Impact:* {current_ev_data['effect_desc']}")
-    
-    st.write("You are completely dependent on the IT cluster engineers. Their server access is non-substitutable[cite: 1]. Balance your 100% influence budget to win their priority:")
-    
-    exchange = st.slider("Exchange Tactics % (Trading dev support to clear their backlog)", 0, 100, 40)
-    coalition = st.slider("Coalition Tactics % (Banding together with other affected VPs)", 0, 100 - exchange, 30)
-    legitimacy = 100 - exchange - coalition
-    st.info(f"Remaining allocation for **Legitimacy Tactics** (Demanding compliance via SLA policy): {legitimacy}%")
-    
-    if st.button("Commit Quarterly Strategy", type="primary"):
-        w_exc = 0.003 * (1.5 if st.session_state.current_event == "competitor_drop" else 1.0)
-        w_coa = 0.002 * (1.6 if st.session_state.current_event == "supply_chain" else 1.0)
-        w_leg = 0.0005 * (2.0 if st.session_state.current_event == "regulatory_shift" else 1.0)
-        
-        mult = 1.0 + (exchange * w_exc) + (coalition * w_coa) + (legitimacy * w_leg)
-        st.session_state.profit *= mult
-        st.session_state.log.append(f"Stage 2 IT Allocation: Exchange={exchange}%, Coalition={coalition}%, Legitimacy={legitimacy}%. Multiplier: {mult:.3f}")
-        
-        st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
-        st.session_state.stage += 1
-        st.rerun()
-
-# STAGE 3: UPWARD INFLUENCE
-elif st.session_state.stage == 3:
-    st.subheader("Stage 3: Securing Capital from the Executive Board")
-    st.warning(f"**{current_ev_data['headline']}**\n\n{current_ev_data['desc']}\n\n*Impact:* {current_ev_data['effect_desc']}")
-    
-    st.write("You need a 20% budget expansion from the CEO and Board. Balance your 100% presentation focus:")
-    
-    rational = st.slider("Rational Persuasion % (Presenting strict financial data and ROI models)", 0, 100, 50)
-    ingratiation = st.slider("Ingratiation % (Praising the CEO's recent strategic roadmap announcements)", 0, 100 - rational, 30)
-    up_coalition = 100 - rational - ingratiation
-    st.info(f"Remaining allocation for **Upward Coalitions** (Enlisting backing from external advisors): {up_coalition}%")
-    
-    if st.button("Commit Quarterly Strategy", type="primary"):
-        w_rat = 0.005 * (1.5 if st.session_state.current_event == "regulatory_shift" else 1.0)
-        w_ing = -0.001 * (0.5 if st.session_state.current_event == "talent_crunch" else 1.0)
-        w_upt = 0.001
-        
-        mult = 1.0 + (rational * w_rat) + (ingratiation * w_ing) + (up_coalition * w_upt)
-        st.session_state.profit *= mult
-        st.session_state.log.append(f"Stage 3 Board Allocation: Rational={rational}%, Ingratiation={ingratiation}%, Upward Coalition={up_coalition}%. Multiplier: {mult:.3f}")
-        
-        st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
-        st.session_state.stage += 1
-        st.rerun()
-
-# STAGE 4: MANAGING RESOURCE DEPENDENCE (SCARCITY)
-elif st.session_state.stage == 4:
-    st.subheader("Stage 4: Mitigating Single-Vendor Vulnerabilities")
-    st.warning(f"**{current_ev_data['headline']}**\n\n{current_ev_data['desc']}\n\n*Impact:* {current_ev_data['effect_desc']}")
-    
-    st.write("Your primary cloud vendor has raised pricing, capitalizing on your dependence[cite: 1]. Balance your strategic response units:")
-    
-    substitute = st.slider("Substitute Creation % (Investing in building internal open-source fallbacks)", 0, 100, 40)
-    contract_legit = st.slider("Contract Enforcement % (Using legal teams to freeze legacy pricing caps)", 0, 100 - substitute, 30)
-    acquiescence = 100 - substitute - contract_legit
-    st.info(f"Remaining allocation for **Accepting Terms** (Paying premiums to avoid operational disruption): {acquiescence}%")
-    
-    if st.button("Commit Quarterly Strategy", type="primary"):
-        w_sub = 0.004 * (1.5 if st.session_state.current_event == "supply_chain" else 1.0)
-        w_con = 0.0015 * (2.0 if st.session_state.current_event == "regulatory_shift" else 1.0)
-        w_acq = -0.002
-        
-        mult = 1.0 + (substitute * w_sub) + (contract_legit * w_con) + (acquiescence * w_acq)
-        st.session_state.profit *= mult
-        st.session_state.log.append(f"Stage 4 Dependence Allocation: Substitutes={substitute}%, Contract Legitimacy={contract_legit}%, Acquiescence={acquiescence}%. Multiplier: {mult:.3f}")
-        
-        st.session_state.current_event = random.choice(list(NEWS_EVENTS.keys()))
-        st.session_state.stage += 1
-        st.rerun()
-
-# STAGE 5: INTERNAL OFFICE POLITICS
-elif st.session_state.stage == 5:
-    st.subheader("Stage 5: Navigating a Zero-Sum Promotion Window")
-    st.warning(f"**{current_ev_data['headline']}**\n\n{current_ev_data['desc']}\n\n*Impact:* {current_ev_data['effect_desc']}")
-    
-    st.write("TechNova introduces a highly competitive performance evaluation framework. High performance pressures often drive severe office politics[cite: 1]. Choose your stance:")
-    
-    perf_focus = st.slider("Core Performance Focus % (Ignoring distractions, focusing entirely on product shipping metrics)", 0, 100, 50)
-    legit_pol = st.slider("Legitimate Political Behavior % (Bypassing chain of command to network with board members)", 0, 100 - perf_focus, 30)
-    withholding = 100 - perf_focus - legit_pol
-    st.info(f"Remaining allocation for **Defensive Information Siloing** (Withholding architecture patterns from rivals): {withholding}%")
-    
-    if st.button("Finalize Fiscal Year Strategy", type="primary"):
-        w_prf = 0.003
-        w_lpl = 0.001 * (1.5 if st.session_state.current_event == "talent_crunch" else 1.0)
-        w_wth = -0.004 * (0.5 if st.session_state.current_event == "competitor_drop" else 1.0)
-        
-        mult = 1.0 + (perf_focus * w_prf) + (legit_pol * w_lpl) + (withholding * w_wth)
-        st.session_state.profit *= mult
-        st.session_state.log.append(f"Stage 5 Political Stance: Performance={perf_focus}%, Legitimate Politics={legit_pol}%, Siloing={withholding}%. Multiplier: {mult:.3f}")
-        
-        st.session_state.stage += 1
-        st.rerun()
-
-# --- SIMULATION COMPLETE / RESULTS ENGINE ---
-elif st.session_state.stage == 6:
+# --- END SCREEN ---
+else:
     st.balloons()
-    st.header("🏁 Annual Financial Review")
+    st.header("🏁 Fiscal Year Complete")
     
     final_p = st.session_state.profit
     initial_p = 2000000.0
     growth = ((final_p - initial_p) / initial_p) * 100
     
-    st.metric("TechNova Final Value", f"${final_p:,.2f}", f"{growth:+.2f}% YoY")
+    st.metric("TechNova Final Value", f"${final_p:,.0f}", f"{growth:+.2f}% YoY")
     
-    if final_p > 2800000:
-        st.success("🏆 **Executive Tier (Elite):** You flawlessly navigated resource dependencies and matched optimal directional tactics to real-time market anomalies[cite: 1].")
-    elif final_p >= 2100000:
-        st.warning("⚖️ **Managerial Tier (Moderate):** Your strategies kept TechNova stable, but excessive reliance on formal compliance or defensive tactics eroded potential optimization[cite: 1].")
-    else:
-        st.error("📉 **Sub-optimal Tier:** Destructive political behaviors or over-reliance on coercive frameworks triggered performance losses[cite: 1].")
-        
-    st.subheader("Simulated System Optimization Matrix")
-    st.write("Your returns were calculated across state-dependent production matrices, where vector $W$ shifts according to resource scarcity and direction of influence:")
+    st.divider()
+    st.subheader("Faculty Debrief Question")
+    st.info("**Question for the Class:** Throughout this simulation, relying on Personal Power (Expert/Referent) and Rational Persuasion consistently generated the highest returns. However, in the real world—especially during periods of 'Critical Market Risk'—many companies immediately revert to strict hierarchies, Legitimate Power, and even Coercive tactics. *Why do organizations default to less effective formal power structures during a crisis?*")
     
-    st.latex(r"\Pi_{final} = \Pi_{initial} \times \prod_{t=1}^{5} \left(1.0 + \sum_{i=1}^{3} x_{i,t} \cdot w_{i,t}(\text{News}_t)\right)")
-    
-    with st.expander("Review Decision Audit Log"):
-        for step in st.session_state.log:
-            st.write(step)
-            
-    if st.button("Re-run Simulation Matrix", type="primary", use_container_width=True):
+    if st.button("Restart Simulation", type="primary", use_container_width=True):
         reset_sim()
         st.rerun()
