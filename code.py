@@ -1,132 +1,113 @@
 import streamlit as st
 
-# Set page configuration
-st.set_page_config(page_title="The Influence Architect", page_icon="🏢", layout="centered")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(page_title="TechNova's Pivot", page_icon="📈", layout="centered")
 
-# --- SCENARIOS & SCORING LOGIC ---
-# Scores are based on OB principles: Rational persuasion & Personal Power are highly effective. Coercion is risky.
-scenarios = [
-    {
-        "id": 1,
-        "title": "Scenario 1: The Stalled Project (Downward Influence)",
-        "context": "You are managing a team establishing a new logistics simulation lab. The team is missing critical deadlines for software integration.",
-        "question": "How do you get the team back on track?",
-        "options": [
-            {"text": "Inform them that anyone missing the next deadline will be removed from this high-profile project and assigned to mundane maintenance tasks.", "tactic": "Coercive Power", "score": 2, "feedback": "Coercive power relies on fear. While it might force immediate compliance, it can be damaging to long-term satisfaction."},
-            {"text": "Announce that the sub-team that finishes their module first will receive extra funding for their specific research interests.", "tactic": "Reward Power", "score": 6, "feedback": "Reward power works by producing positive benefits[cite: 42]. However, the expectation of reward becomes necessary to maintain this influence[cite: 58]."},
-            {"text": "Sit down with them, roll up your sleeves, and use your technical background in system architecture to help them troubleshoot the bottleneck.", "tactic": "Expert Power", "score": 10, "feedback": "Excellent. Expert power relies on special skills or knowledge[cite: 61]. Personal sources of power are the most effective for generating commitment[cite: 54]."}
-        ]
-    },
-    {
-        "id": 2,
-        "title": "Scenario 2: The Budget Request (Upward Influence)",
-        "context": "You need an additional 15% budget approval from the Institute Director to procure advanced hardware for the lab.",
-        "question": "How do you approach the Director?",
-        "options": [
-            {"text": "Present a detailed ROI analysis showing how the new hardware will increase research output and attract industry grants.", "tactic": "Rational Persuasion", "score": 10, "feedback": "Perfect. Rational persuasion (logical arguments and factual evidence) [cite: 76] is the most effective tactic for upward influence."},
-            {"text": "Use friendly flattery, praising the Director's recent strategic initiatives before slipping in your budget request.", "tactic": "Ingratiation", "score": 4, "feedback": "Ingratiation involves using flattery before making a request[cite: 76]. It is generally less effective for upward influence compared to logical data."},
-            {"text": "Politely remind the Director that the institutional policy guarantees a contingency fund for all 'Center of Excellence' projects.", "tactic": "Legitimacy", "score": 7, "feedback": "Legitimating tactics rely on organizational policies[cite: 76]. It works, but it doesn't build emotional or logical commitment."}
-        ]
-    },
-    {
-        "id": 3,
-        "title": "Scenario 3: The Uncooperative Department (Lateral Influence)",
-        "context": "You are heavily dependent on the IT department to configure the servers. However, they are prioritizing other tasks because they do not report to you.",
-        "question": "How do you secure their cooperation?",
-        "options": [
-            {"text": "Remind them that you are a Senior Project Chairperson and demand they respect your formal authority.", "tactic": "Legitimate Power", "score": 3, "feedback": "Legitimate power relies on formal hierarchy[cite: 44]. This doesn't work well when there is no clear chain of command over the target[cite: 58]."},
-            {"text": "Offer to share some of your lab's student assistants to help IT with their data-entry backlog if they configure your servers this week.", "tactic": "Exchange", "score": 8, "feedback": "Exchange rewards the target with benefits or favors[cite: 76]. This is a highly effective tactic for lateral (peer-to-peer) influence."},
-            {"text": "Enlist the support of three other department heads who also need the servers, presenting a united front to the IT manager.", "tactic": "Coalitions", "score": 7, "feedback": "Enlisting the aid of others to persuade the target is a Coalition tactic[cite: 76]. It is effective for lateral influence."}
-        ]
-    },
-    {
-        "id": 4,
-        "title": "Scenario 4: Navigating Office Politics",
-        "context": "A new 'zero-sum' performance evaluation system has been introduced, increasing high performance pressures[cite: 84]. You notice peers withholding critical supply chain data to make themselves look better.",
-        "question": "How do you respond to this political behavior?",
-        "options": [
-            {"text": "Complain directly to your supervisor about the lack of data sharing.", "tactic": "Legitimate Political Behavior", "score": 8, "feedback": "Complaining to a supervisor is an example of legitimate, everyday political behavior[cite: 80, 82]."},
-            {"text": "Become anxious, reduce your own performance, and start looking for a new job.", "tactic": "Negative Response to Politics", "score": 0, "feedback": "Organizational politics often threaten employees, leading to increased stress, decreased satisfaction, and turnover."},
-            {"text": "Quietly bypass the chain of command to secure the data directly from junior analysts in the other department.", "tactic": "Legitimate Political Behavior", "score": 6, "feedback": "Bypassing the chain of command is a standard political behavior[cite: 83]. It can get results but carries interpersonal risks."}
-        ]
-    }
-]
+# --- INITIALIZE SESSION STATE ---
+if 'stage' not in st.session_state:
+    st.session_state.stage = 1
+if 'profit' not in st.session_state:
+    st.session_state.profit = 1000000  # Starting profit $1,000,000
 
-# --- SESSION STATE INITIALIZATION ---
-if 'step' not in st.session_state:
-    st.session_state.step = 0
-if 'score' not in st.session_state:
-    st.session_state.score = 0
-if 'history' not in st.session_state:
-    st.session_state.history = []
+def reset_game():
+    st.session_state.stage = 1
+    st.session_state.profit = 1000000
 
-def next_step(selected_option):
-    st.session_state.score += selected_option['score']
-    st.session_state.history.append({
-        "scenario": scenarios[st.session_state.step]['title'],
-        "tactic": selected_option['tactic'],
-        "feedback": selected_option['feedback'],
-        "points": selected_option['score']
-    })
-    st.session_state.step += 1
+def next_stage(multiplier):
+    st.session_state.profit = int(st.session_state.profit * multiplier)
+    st.session_state.stage += 1
 
-def reset_app():
-    st.session_state.step = 0
-    st.session_state.score = 0
-    st.session_state.history = []
-
-# --- UI RENDERING ---
-st.title("🏛️ The Influence Architect")
-st.markdown("Navigate the scenarios below. Your choices will determine your Power Profile.")
+# --- GAME HEADER ---
+st.title("📈 TechNova's Pivot: Influence & Profit")
+st.markdown("You are the VP of Product at TechNova Solutions. The market has shifted, and you must rapidly integrate a new AI architecture. Your influence choices directly impact the company's bottom line.")
+st.metric("Current Projected Profit", f"${st.session_state.profit:,.0f}")
 st.divider()
 
-# Progress Bar
-if st.session_state.step < len(scenarios):
-    progress = int((st.session_state.step / len(scenarios)) * 100)
-    st.progress(progress, text=f"Scenario {st.session_state.step + 1} of {len(scenarios)}")
-
-    current_scenario = scenarios[st.session_state.step]
+# --- STAGE 1: DOWNWARD INFLUENCE ---
+if st.session_state.stage == 1:
+    st.header("Stage 1: The Resisting Engineering Team")
+    st.write("Your engineering team is experiencing high performance pressures and anxiety over the new AI integration[cite: 1]. You have 100 hours this week to influence them to adopt the new coding standards.")
     
-    st.subheader(current_scenario['title'])
-    st.info(current_scenario['context'])
-    st.write(f"**{current_scenario['question']}**")
+    st.markdown("### Choose your tactic allocation:")
+    st.write("Allocate your time between leveraging your technical expertise or using threats of punishment for missing deadlines.")
+    
+    expert_alloc = st.slider("Hours spent on Expert Power (Mentoring, sharing knowledge)", 0, 100, 50)
+    coercive_alloc = 100 - expert_alloc
+    
+    st.write(f"**Remaining hours assigned to Coercive Power (Monitoring and threatening termination):** {coercive_alloc}")
+    
+    if st.button("Execute Strategy", use_container_width=True):
+        # Math logic: Expert power is positively related to performance, Coercive is damaging[cite: 1]
+        multiplier = 1.0 + (expert_alloc * 0.003) - (coercive_alloc * 0.002)
+        
+        st.info(f"**Analysis:** Personal sources of power are most effective. Expert power is positively related to employees' performance, whereas coercive power can be damaging[cite: 1].")
+        next_stage(multiplier)
+        st.rerun()
 
-    # Render Options as buttons
-    for option in current_scenario['options']:
-        if st.button(option['text'], use_container_width=True):
-            next_step(option)
-            st.rerun()
+# --- STAGE 2: LATERAL INFLUENCE ---
+elif st.session_state.stage == 2:
+    st.header("Stage 2: The Siloed IT Department")
+    st.write("You are completely dependent on the IT department to configure the new AI cloud servers. Because their skills are non-substitutable, they hold significant power[cite: 1]. They are prioritizing other projects.")
+    
+    st.markdown("### Choose your tactic allocation:")
+    st.write("Allocate your time between negotiating an exchange or demanding compliance based on company rules.")
+    
+    exchange_alloc = st.slider("Hours spent on Exchange (Offering your developers to help with their backlog)", 0, 100, 50)
+    legitimacy_alloc = 100 - exchange_alloc
+    
+    st.write(f"**Remaining hours assigned to Legitimacy (Citing organizational policies to force compliance):** {legitimacy_alloc}")
+    
+    if st.button("Execute Strategy", use_container_width=True):
+        # Math logic: Exchange is highly effective for lateral influence[cite: 1]. Legitimacy is less effective laterally.
+        multiplier = 1.0 + (exchange_alloc * 0.004) + (legitimacy_alloc * 0.0005)
+        
+        st.info(f"**Analysis:** For lateral influence (peer-to-peer), Exchange (rewarding the target with benefits/favors) is a preferred tactic[cite: 1]. Legitimacy (relying on authority/rules) is less optimal laterally[cite: 1].")
+        next_stage(multiplier)
+        st.rerun()
 
-else:
-    # --- RESULTS SCREEN ---
+# --- STAGE 3: UPWARD INFLUENCE ---
+elif st.session_state.stage == 3:
+    st.header("Stage 3: Pitching the CEO")
+    st.write("To finalize the pivot, you need a massive budget reallocation. You must influence the CEO. Organizational factors like resource reallocation often trigger high political behavior[cite: 1].")
+    
+    st.markdown("### Choose your tactic allocation:")
+    st.write("Allocate your effort between presenting hard data versus flattering the CEO.")
+    
+    rational_alloc = st.slider("Effort (%) spent on Rational Persuasion (ROI data and factual evidence)", 0, 100, 50)
+    ingratiation_alloc = 100 - rational_alloc
+    
+    st.write(f"**Remaining effort (%) assigned to Ingratiation (Using flattery and praise before making the request):** {ingratiation_alloc}")
+    
+    if st.button("Execute Strategy", use_container_width=True):
+        # Math logic: Rational Persuasion is the primary effective upward tactic[cite: 1].
+        multiplier = 1.0 + (rational_alloc * 0.005) - (ingratiation_alloc * 0.002)
+        
+        st.info(f"**Analysis:** Rational persuasion (presenting logical arguments and factual evidence) is the most preferred tactic for upward influence[cite: 1].")
+        next_stage(multiplier)
+        st.rerun()
+
+# --- FINAL RESULTS ---
+elif st.session_state.stage == 4:
     st.balloons()
-    st.header("📊 Final Power Profile")
+    st.header("🏁 Fiscal Year Complete")
     
-    max_score = 38 # Total possible points
-    percentage = (st.session_state.score / max_score) * 100
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total Influence Score", f"{st.session_state.score} / {max_score}")
-    with col2:
-        st.metric("Effectiveness Rating", f"{percentage:.0f}%")
-
-    if percentage >= 80:
-        st.success("**Master Influencer:** You successfully rely on Personal Power and Rational Persuasion, which are the most effective bases of power[cite: 54, 77].")
-    elif percentage >= 50:
-        st.warning("**Transactional Manager:** You rely heavily on Formal Power (Reward/Legitimate)[cite: 38]. While effective in the short term, you need to build more Expert and Referent power.")
-    else:
-        st.error("**Coercive Operator:** You rely too much on fear and formal authority. This damages organizational commitment.")
-
-    st.divider()
-    st.subheader("Your Decision Debrief")
+    final_profit = st.session_state.profit
+    st.metric("Final Company Profit", f"${final_profit:,.0f}")
     
-    for item in st.session_state.history:
-        with st.expander(f"{item['scenario']} - You used: {item['tactic']}"):
-            st.write(f"**Score Awarded:** {item['points']} points")
-            st.write(f"**Analysis:** {item['feedback']}")
-
+    st.markdown("### The Science Behind the Score")
+    st.write("Your profit updates were calculated using a continuous function representing organizational behavior principles. For example, in Stage 1, the profit multiplier was modeled as:")
+    
+    # Using LaTeX explicitly for the complex formula as requested
+    st.latex(r"Profit_{new} = Profit_{old} \times \left( 1.0 + (\alpha \cdot Expert_{hours}) - (\beta \cdot Coercive_{hours}) \right)")
+    
+    st.markdown("""
+    **Debrief Points:**
+    * **Personal Power:** Relying on Expert power yields high positive multipliers because it is positively related to organizational commitment and performance[cite: 1].
+    * **Coercive Power:** Relying on fear and threats yields negative multipliers because coercive power can be damaging and increases stress[cite: 1].
+    * **Directional Tactics:** Rational Persuasion is mathematically weighted higher for Upward influence, while Exchange is heavily weighted for Lateral influence[cite: 1].
+    """)
+    
     st.divider()
-    if st.button("Restart Simulation", type="primary"):
-        reset_app()
+    if st.button("Play Again", type="primary", use_container_width=True):
+        reset_game()
         st.rerun()
